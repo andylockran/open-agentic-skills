@@ -1,4 +1,8 @@
-#!/usr/bin/env python3
+#!/usr/bin/env -S uv run
+# /// script
+# requires-python = ">=3.10"
+# dependencies = []
+# ///
 """
 openspec-validate.py - OpenSpec Proposal and Contract Validator
 Part of the 'andyapproach' skill. Author: andylockran

@@ -1,6 +1,6 @@
 ---
 name: andyapproach
-description: Mandatory engineering workflow governance for AI-assisted development. Enforces Git worktree isolation for multi-agent collaboration, requires OpenSpec change proposals before implementation, and mandates explicit interface declarations before spawning child subagents.
+description: Mandatory engineering workflow governance for AI-assisted development. Enforces Git worktree isolation for multi-agent collaboration, requires OpenSpec change proposals before implementation, mandates explicit interface declarations before spawning child subagents, and requires uv-scoped environments for all Python runtimes and executions.
 license: Apache-2.0
 metadata:
   author: andylockran
@@ -15,7 +15,7 @@ The **Andy Approach** is the architectural and operational standard for developi
 
 ---
 
-## 🏛️ The Three Inviolable Laws
+## 🏛️ The Four Inviolable Laws
 
 ```text
                ┌────────────────────────────────────────────────────────┐
@@ -33,6 +33,12 @@ The **Andy Approach** is the architectural and operational standard for developi
                ┌────────────────────────────────────────────────────────┐
                │           LAW 3: GIT WORKTREE ISOLATION                │
                │ Subagents collaborate exclusively in dedicated trees.  │
+               └───────────────────────────┬────────────────────────────┘
+                                           │
+                                           ▼
+               ┌────────────────────────────────────────────────────────┐
+               │         LAW 4: UV-SCOPED PYTHON RUNTIME                │
+               │  Zero unmanaged Python; all runtime executions via uv. │
                └────────────────────────────────────────────────────────┘
 ```
 
@@ -44,6 +50,9 @@ The **Andy Approach** is the architectural and operational standard for developi
 
 3. **Law 3: Git Worktree Isolation (Zero Working-Tree Contamination)**  
    All subagents collaborate on a single host Git repository exclusively through **Git Worktrees** (`git worktree add`). Subagents **MUST NEVER** make changes directly in the main working tree or share an unstaged working directory. Each subagent operates within its own dedicated worktree directory, executing tests and commits in isolation before merging.
+
+4. **Law 4: Isolated Python Runtime via `uv` (Zero Global Python)**  
+   All Python scripts, test harnesses, tools, contract validators, and virtual environments **MUST** execute strictly through `uv` (`uv run`, `uv venv`, `uvx`, or inline PEP 723 script metadata). Coordinating agents and spawned subagents are strictly prohibited from invoking unmanaged global `python`, `python3`, or `pip` outside of a `uv`-managed environment.
 
 ---
 
@@ -85,7 +94,7 @@ Before any code editing tool is called:
    - **Boundary Definition**: Explicit list of what is strictly **OUT OF SCOPE**.
    - **Interface Deltas**: Description of additions or modifications to public APIs or internal contracts.
    - **Verification Strategy**: Automated test scenarios, edge cases, and performance criteria.
-3. Review and validate the proposal using `python3 scripts/openspec-validate.py openspec/proposals/<proposal>.md`.
+3. Review and validate the proposal using `uv run scripts/openspec-validate.py openspec/proposals/<proposal>.md`.
 4. Commit the approved proposal to the integration branch.
 
 ---
@@ -133,14 +142,15 @@ When invoking a subagent (via `invoke_subagent` or a child background task), the
 Task: Implement OAuth2 PKCE login provider according to the OpenSpec proposal.
 Working Directory (Git Worktree): /home/user/app/.worktrees/feat-oauth-pkce
 Declared Contract: /home/user/app/openspec/contracts/auth-api.openapi.yaml
-Contract Test Suite: pytest tests/contracts/test_oauth_pkce.py
+Contract Test Suite: uv run pytest tests/contracts/test_oauth_pkce.py
 
 Guidelines:
 1. You MUST execute all commands and file operations within your assigned worktree.
 2. Do NOT modify files outside the worktree.
 3. Implement the feature so that it strictly adheres to the OpenAPI contract.
-4. Run the contract verification suite until all tests pass with 100% compliance.
-5. Create atomic, conventional commits on branch 'feat/oauth-pkce'.
+4. Run the contract verification suite via 'uv run pytest' until all tests pass with 100% compliance.
+5. Run all Python commands and scripts exclusively through uv ('uv run', 'uv venv', 'uv add'). Never use global pip or system python.
+6. Create atomic, conventional commits on branch 'feat/oauth-pkce'.
 ```
 
 ---
@@ -151,7 +161,7 @@ Once the subagent signals completion:
 1. **Contract Verification**:
    The parent coordinator runs the contract verification and integration tests within the worktree:
    ```bash
-   cd .worktrees/feat-oauth-pkce && pytest tests/contracts/
+   cd .worktrees/feat-oauth-pkce && uv run pytest tests/contracts/
    ```
 2. **Reconciliation / Rebase**:
    Ensure the feature branch is cleanly rebased on the latest integration branch:
