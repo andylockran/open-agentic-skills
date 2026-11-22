@@ -1,0 +1,32 @@
+# OpenSpec Interface Contract Definition
+# Governed by the 'andyapproach' skill. Author: andylockran
+schema_version: "openspec-v1.0"
+contract_id: "contract.component.subsystem"
+title: "Component Interface Contract"
+status: "draft" # draft | frozen | deprecated
+
+producer:
+  subagent_role: "Backend API Builder"
+  worktree: ".worktrees/feat-api"
+  branch: "feat/api"
+
+consumer:
+  subagent_role: "Frontend UI Builder"
+  worktree: ".worktrees/feat-ui"
+  branch: "feat/ui"
+
+interface_type: "rest-openapi" # rest-openapi | grpc | json-schema | typescript | python-typing
+
+specification:
+  file: "openspec/contracts/api.openapi.yaml"
+  types: "openspec/contracts/types.ts"
+
+invariants:
+  - "All timestamps MUST be ISO-8601 UTC strings."
+  - "Responses MUST include an idempotency key header on POST."
+  - "Error payloads MUST strictly follow RFC 7807 Problem Details."
+
+verification:
+  test_harness: "pytest tests/contracts/test_contract.py"
+  mock_server: "npx prism mock openspec/contracts/api.openapi.yaml"
+  strict_mode: true
